@@ -1,0 +1,137 @@
+﻿RGB= imread ('dog.jpg'); %读入图像
+[m n]=size(RGB);   %m是数据个数，n是数据维度
+figure(),imshow(RGB);title(' 图一 彩色原图像')
+hold off;
+RGB=double(RGB); 
+filter=ones(5,5);
+filter=filter/sum(filter(:));
+denoised_r=conv2(RGB(:,:,1),filter,'same');
+denoised_g=conv2(RGB(:,:,2),filter,'same');
+denoised_b=conv2(RGB(:,:,3),filter,'same');
+denoised_rgb=cat(3, denoised_r, denoised_g, denoised_b);
+RGB=uint8(denoised_rgb);
+figure();imshow(RGB);title('去噪后图像');%去噪后的结果
+RGB=double(RGB);
+img1= RGB(:,:,1);
+img2=RGB (:,:,2);
+img3= RGB (:,:,3);
+t=0;
+c11(1)=4; c12(1)=4; c13(1)=4;
+c21(1)=70; c22(1)=67; c23(1)=71;
+c31(1)=100; c32(1)=100; c33(1)=100;
+c41(1)=200; c42(1)=200; c43(1)=200;%选四个初始聚类中心
+cluster_idx=zeros(69,97);
+class1_num=0;
+class2_num=0;
+class3_num=0;
+class4_num=0; 
+sum_class11=0;
+sum_class21=0;
+sum_class31=0;
+sum_class41=0;
+sum_class12=0;
+sum_class22=0;
+sum_class32=0;
+sum_class42=0;
+sum_class13=0;
+sum_class23=0;
+sum_class33=0;
+sum_class43=0;
+for k=1:20
+    if t==0
+       for i=1:69
+            for j=1:97
+                r=sqrt((img1(i,j)-c11(k))^2+(img2(i,j)-c12(k))^2+(img3(i,j)-c13(k))^2);
+                g=sqrt((img1(i,j)-c21(k))^2+(img2(i,j)-c22(k))^2+(img3(i,j)-c23(k))^2);
+                b=sqrt((img1(i,j)-c31(k))^2+(img2(i,j)-c32(k))^2+(img3(i,j)-c33(k))^2);
+                q=sqrt((img1(i,j)-c41(k))^2+(img2(i,j)-c42(k))^2+(img3(i,j)-c43(k))^2); %计算各像素灰度与聚类中心的距离
+                Z=[r,g,b,q];
+                d=min(Z);
+                if d==r
+                   class1_num=class1_num+1;
+                   cluster_idx(i,j)=1;
+                   sum_class11=sum_class11+img1(i,j);
+                   sum_class12=sum_class12+img2(i,j);
+                   sum_class13=sum_class13+img3(i,j);
+                end
+                if d==g
+                   class2_num=class2_num+1;
+                   cluster_idx(i,j)=2;
+                   sum_class21=sum_class21+img1(i,j);
+                   sum_class22=sum_class22+img2(i,j);
+                   sum_class23=sum_class23+img3(i,j);
+                end
+                if d==b
+                   class3_num=class3_num+1;
+                   cluster_idx(i,j)=3;
+                   sum_class31=sum_class31+img1(i,j);
+                   sum_class32=sum_class32+img2(i,j);
+                   sum_class33=sum_class33+img3(i,j);
+                end
+                if d==q
+                   class4_num=class4_num+1;
+                   cluster_idx(i,j)=4;
+                   sum_class41=sum_class41+img1(i,j);
+                   sum_class42=sum_class42+img2(i,j);
+                   sum_class43=sum_class43+img3(i,j);
+                end
+            end
+       end
+       c11(k+1)=sum_class11/class1_num;
+       c21(k+1)=sum_class21/class2_num;
+       c31(k+1)=sum_class31/class3_num;
+       c41(k+1)=sum_class41/class4_num;%将所有低灰度求和取平均，作为下一个低灰度中心  
+       c12(k+1)=sum_class12/class1_num;
+       c22(k+1)=sum_class22/class2_num;
+       c42(k+1)=sum_class42/class4_num;
+       c32(k+1)=sum_class32/class3_num;%将所有低灰度求和取平均，作为下一个中间灰度中心
+       c13(k+1)=sum_class13/class1_num;
+       c23(k+1)=sum_class23/class2_num;
+       c43(k+1)=sum_class43/class4_num;
+       c33(k+1)=sum_class33/class3_num;%将所有低灰度求和取平均，作为下一个高灰度中心
+       d11=abs(c11(k+1)-c11(k));
+       d12=abs(c12(k+1)-c12(k));
+       d13=abs(c13(k+1)-c13(k));
+       d21=abs(c21(k+1)-c21(k));
+       d22=abs(c22(k+1)-c22(k));
+       d23=abs(c23(k+1)-c23(k));
+       d31=abs(c31(k+1)-c31(k));
+       d32=abs(c32(k+1)-c32(k));
+       d33=abs(c33(k+1)-c33(k));
+       d41=abs(c41(k+1)-c41(k)); 
+       d42=abs(c42(k+1)-c42(k));
+       d43=abs(c43(k+1)-c43(k));
+       if(d11<=0.001&&d12<=0.001&&d13<=0.001&&d21<=0.001&&d22<=0.001&&d23<=0.001&&d31<=0.001&&d32<=0.001&&d33<=0.001&&d41<=0.001&&d42<=0.001&&d43(k)<=0.001)
+          t=1;
+       end
+    end
+end
+for i=1:69
+    for j=1:97
+        if cluster_idx(i,j)==1
+           img1(i,j)=255;
+           img2(i,j)=0;
+           img3(i,j)=0;
+        end
+        if cluster_idx(i,j)==2
+           img1(i,j)=256;
+           img2(i,j)=256;
+           img3(i,j)=0;
+        end
+        if cluster_idx(i,j)==3
+           img1(i,j)=0;
+           img2(i,j)=0;
+           img3(i,j)=255;
+        end
+        if cluster_idx(i,j)==4
+           img1(i,j)=0;
+           img2(i,j)=128;
+           img3(i,j)=0;
+        end
+    end
+end
+Img1=uint8(img1);
+Img2=uint8(img2);
+Img3=uint8(img3);
+R=cat(3,Img1,Img2,Img3);
+figure(),imshow(R);title('图二 聚类后的图像')

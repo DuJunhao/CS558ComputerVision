@@ -1,0 +1,39 @@
+function [numbers,K]=ransac(ims,points,DistanceThresholding,inliersRatio)
+Probability=0.5;
+MinimumNumber=6;
+numbers=size(points,1);%number of points
+K = log(1-Probability)/log(1-(inliersRatio)^MinimumNumber);   %the times to choose the best line
+pretotal = 0; %the number fits the model
+k = 1;
+while pretotal < size(points,1) * inliersRatio && k < K  %when inliers are under the percentage of the amount or reach the maximum loop times, quit 
+    SampleIndex = floor(1 + (size(points,1) - 1) * rand(2,1)); %random index
+    
+    samp1 = points(SampleIndex(1),:); 
+    samp2 = points(SampleIndex(2),:); %get 2 random points
+    
+    line = lineParam([samp1;samp2]); %get the line from the 2 points
+    temp = [points ones(size(points,1),1)];
+    mask = abs(line * [points ones(size(points,1),1)]'); %compute the distance from the points to the line  d = |ax0 + by0 + c| / sqrt(a * a + b * b);
+    total = sum(mask < DistanceThresholding);%count the number of points whose distance is below the threshoding
+    
+    if total > pretotal
+        pretotal = total;
+        bestline = line;  %try to find the best line
+    end
+    
+    k = k + 1;
+  
+end
+    
+%show the image
+figure(2)
+imshow(ims);
+hold on;
+ 
+%show the line by many points
+mask = abs(bestline * [points ones(size(points,1),1)]') < DistanceThresholding;
+for i = 1 : length(mask)
+    if mask(i)
+        plot(points(i,1),points(i,2),'+');
+    end
+end

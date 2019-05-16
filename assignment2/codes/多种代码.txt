@@ -1,0 +1,88 @@
+﻿function [ims,DetectedPoints]  = PreProcessing(threshold)
+% HESSIANDET  Basic Hessian detector
+%   F = HESSIANDET(IM) runs a basic implementation of the Hessian
+%   detector on the gray-scale image IM.   
+sigma=1;
+ims = MyGaussian(sigma) ;
+
+ [gx, gy] = gradient(double(ims));
+ [gxx, gxy] = gradient(gx);
+ [gxy, gyy] = gradient(gy);
+ score = gyy.*gxx - gxy.*gxy ; %det(H)
+
+points = (islocalmax(score,1) .* islocalmax(score,2)) + ...
+         (islocalmin(score,1) .* islocalmin(score,2)) ;
+ points = points .* (abs(score) >threshold) ;
+points(1,:)=[];
+points(:,1)=[];
+scores = score(find(points)) ;
+[i,j] = find(points) ;
+DetectedPoints=[j(:),i(:)]';
+
+%disp(gyy);
+%disp(points);
+
+%disp([i,j]);
+
+
+
+
+
+
+
+
+
+
+
+
+function [ims,f,gxx,gxy,gyy]  = PreProcessing(threshold)
+% HESSIANDET  Basic Hessian detector
+%   F = HESSIANDET(IM) runs a basic implementation of the Hessian
+%   detector on the gray-scale image IM.   
+sigma=1;
+ims = MyGaussian(sigma) ;
+[m, n]=size(ims);
+%design the sobel model
+hx = [1 0 -1;2 0 -2;1 0 -1];%vertical gradient model of sobel 
+hy = hx';                    %horizontal gradient model of sobel
+%vertical Gradient
+gradx = filter2(hx,ims,'same');
+gradx = abs(gradx); %compute the vertical gradient
+gxx=filter2(hx,gradx,'same');
+%horizontal Gradient
+grady = filter2(hy,ims,'same');
+grady = abs(grady); %compute the horizontal gradient
+gyy=filter2(hy,grady,'same');
+
+gxy=filter2(hy,gradx,'same');
+%sobel
+
+Hessian=zeros(m,n);
+for i=1:m
+   for j=1:n 
+    score=gxx(i,j).*gyy(i,j)-gxy(i,j).*gxy(i,j);    
+        if abs(score)>threshold
+        Hessian(i,j)=score;
+        end
+       
+   end
+end
+
+
+Hessian(m,:)=0;
+Hessian(:,n)=0;
+Hessian(m-1,:)=0;
+Hessian(:,n-1)=0;
+Hessian(m-2,:)=0;
+Hessian(:,n-2)=0;
+
+Hessian(1,:)=0;
+Hessian(:,1)=0;
+Hessian(2,:)=0;
+Hessian(:,2)=0;
+Hessian(3,:)=0;
+Hessian(:,3)=0;
+
+points = Hessian .* (abs(Hessian) > threshold) ;
+[i,j] = find(points) ;
+f = [j(:),i(:)]' ;

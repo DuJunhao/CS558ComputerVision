@@ -1,0 +1,26 @@
+d2 = [1 -2 1];   %filter
+d = [-1 0 1]/2 ; %filter
+im11 = conv2(1,d2,ims,'same') ; %Dyy
+im22 = conv2(d2,1,ims,'same') ; %Dxx
+im12 = conv2(d,d,ims,'same') ;  %Dxy
+score = im11.*im22 - im12.*im12 ; %det(H)
+ 
+points = (islocalmax(score,1) .* islocalmax(score,2)) + ...
+         (islocalmin(score,1) .* islocalmin(score,2)) ;
+points = points .* (abs(score) > 0.0006) ;
+ 
+scores = score(find(points)) ;
+[i,j] = find(points) ;
+f = [j(:),i(:),scores(:)]' ;
+
+
+
+
+
+
+
+
+ [gx, gy] = gradient(double(ims));
+ [gxx, gxy] = gradient(gx);
+ [gxy, gyy] = gradient(gy);
+ score = gyy.*gxx - gxy.*gxy ; %det(H)
